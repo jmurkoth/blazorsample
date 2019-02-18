@@ -1,5 +1,7 @@
 ﻿@page "/"
 @inject HttpClient HttpClient
+@inject Microsoft.AspNetCore.Components.Services.IUriHelper UriHelper
+
 <div class="main">
 
     @if (specials != null)
@@ -7,7 +9,7 @@
         <ul class="pizza-cards">
             @foreach (var special in specials)
             {
-                <li style="background-image:url('@special.ImageUrl')">
+                <li style="background-image:url('@special.ImageUrl')" onclick="@(()=>ShowConfigurePizzaDialog(special))">
                     <div class="pizza-info">
                         <span class="title">@special.Name</span>
                         @special.Description
@@ -18,12 +20,95 @@
             }
         </ul>
     }
+    @if (showconfigurationDialog)
+    {
+        <ConfigurePizzaDialog Pizza="configuringPizza" OnCancel="@CancelConfigurePizzaDialog" OnConfirm="@OrderConfiguredPizza"></ConfigurePizzaDialog>
+    }
+
+</div>
+<div class="sidebar">
+    @if (pizzaOrder.Pizzas.Any())
+    {
+        <div class="order-contents">
+            <h2>Your order</h2>
+
+            @foreach (var configuredPizza in pizzaOrder.Pizzas)
+            {
+                <ConfiguredPizzaItem Pizza="configuredPizza" OnRemove="(()=>RemovePizzaFromOrder(configuredPizza))" />
+            }
+        </div>
+    }
+    else
+    {
+        <div class="empty-cart">Choose a pizza<br>to get started</div>
+    }
+    <div class="order-total @(pizzaOrder.Pizzas.Any() ? "" : "hidden")">
+        Total:
+        <span class="total-price">@pizzaOrder.GetFormattedTotalPrice()</span>
+        <button class="btn btn-warning" disabled="@(pizzaOrder.Pizzas.Count == 0)" onclick="@PlaceOrder">
+            Order >
+        </button>
+    </div>
 </div>
 @functions{
-    List<PizzaSpecial> specials;
 
-     protected async override Task OnInitAsync()
+    List<PizzaSpecial> specials;
+    Pizza configuringPizza;
+    bool showconfigurationDialog;
+    Order pizzaOrder;
+
+    protected async override Task OnInitAsync()
     {
+        pizzaOrder = new Order();
         specials = await HttpClient.GetJsonAsync<List<PizzaSpecial>>("/specials");
+    }
+
+    void ShowConfigurePizzaDialog(PizzaSpecial special)
+    {
+        configuringPizza = new Pizza
+        {
+            Special = special,
+            SpecialId = special.Id,
+            Size = Pizza.DefaultSize,
+            Toppings = new List<PizzaTopping>()
+        };
+        showconfigurationDialog = true;
+    }
+
+    void CancelConfigurePizzaDialog()
+    {
+        Console.WriteLine("Cancelled");
+        configuringPizza = null;
+        showconfigurationDialog = false;
+        StateHasChanged();
+    }
+    void OrderConfiguredPizza()
+    {
+        Console.WriteLine("ordering");
+        if (configuringPizza != null)
+        {
+            pizzaOrder.Pizzas.Add(configuringPizza);
+            configuringPizza = null;
+        }
+
+        showconfigurationDialog = false;
+        StateHasChanged();
+    }
+    void RemovePizzaFromOrder(Pizza configuredPizza)
+    {
+
+        if (pizzaOrder != null && configuredPizza != null)
+        {
+            Console.WriteLine("Removing");
+            pizzaOrder.Pizzas.Remove(configuredPizza);
+        }
+        StateHasChanged();
+    }
+
+    async Task PlaceOrder()
+    {
+        await HttpClient.PostJsonAsync("/orders", pizzaOrder);
+        pizzaOrder = new Order();
+        UriHelper.NavigateTo("myorders");
     }
 }
