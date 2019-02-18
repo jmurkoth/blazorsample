@@ -7,6 +7,7 @@ namespace BlazorSample.Client
     {
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddScoped<OrderState>();
         }
 
         public void Configure(IComponentsApplicationBuilder app)

@@ -1,6 +1,8 @@
 ﻿@page "/"
 @inject HttpClient HttpClient
 @inject Microsoft.AspNetCore.Components.Services.IUriHelper UriHelper
+@inject OrderState currentState
+@implements IDisposable
 
 <div class="main">
 
@@ -9,7 +11,7 @@
         <ul class="pizza-cards">
             @foreach (var special in specials)
             {
-                <li style="background-image:url('@special.ImageUrl')" onclick="@(()=>ShowConfigurePizzaDialog(special))">
+                <li style="background-image:url('@special.ImageUrl')" onclick="@(()=>currentState.ShowConfigurePizzaDialog(special))">
                     <div class="pizza-info">
                         <span class="title">@special.Name</span>
                         @special.Description
@@ -20,21 +22,21 @@
             }
         </ul>
     }
-    @if (showconfigurationDialog)
+    @if (currentState.ShowconfigurationDialog)
     {
-        <ConfigurePizzaDialog Pizza="configuringPizza" OnCancel="@CancelConfigurePizzaDialog" OnConfirm="@OrderConfiguredPizza"></ConfigurePizzaDialog>
+        <ConfigurePizzaDialog OnCancel="@currentState.CancelConfigurePizzaDialog" OnConfirm="@currentState.OrderConfiguredPizza"></ConfigurePizzaDialog>
     }
 
 </div>
 <div class="sidebar">
-    @if (pizzaOrder.Pizzas.Any())
+    @if (currentState.PizzaOrder.Pizzas.Any())
     {
         <div class="order-contents">
             <h2>Your order</h2>
 
-            @foreach (var configuredPizza in pizzaOrder.Pizzas)
+            @foreach (var configuredPizza in currentState.PizzaOrder.Pizzas)
             {
-                <ConfiguredPizzaItem Pizza="configuredPizza" OnRemove="(()=>RemovePizzaFromOrder(configuredPizza))" />
+                <ConfiguredPizzaItem Pizza="configuredPizza" OnRemove="(()=>currentState.RemovePizzaFromOrder(configuredPizza))" />
             }
         </div>
     }
@@ -42,10 +44,10 @@
     {
         <div class="empty-cart">Choose a pizza<br>to get started</div>
     }
-    <div class="order-total @(pizzaOrder.Pizzas.Any() ? "" : "hidden")">
+    <div class="order-total @(currentState.PizzaOrder.Pizzas.Any() ? "" : "hidden")">
         Total:
-        <span class="total-price">@pizzaOrder.GetFormattedTotalPrice()</span>
-        <button class="btn btn-warning" disabled="@(pizzaOrder.Pizzas.Count == 0)" onclick="@PlaceOrder">
+        <span class="total-price">@currentState.PizzaOrder.GetFormattedTotalPrice()</span>
+        <button class="btn btn-warning" disabled="@(currentState.PizzaOrder.Pizzas.Count == 0)" onclick="@PlaceOrder">
             Order >
         </button>
     </div>
@@ -53,62 +55,26 @@
 @functions{
 
     List<PizzaSpecial> specials;
-    Pizza configuringPizza;
-    bool showconfigurationDialog;
-    Order pizzaOrder;
+  
 
     protected async override Task OnInitAsync()
     {
-        pizzaOrder = new Order();
+        currentState.StateChanged += OnOrderStateChanged;
         specials = await HttpClient.GetJsonAsync<List<PizzaSpecial>>("/specials");
     }
 
-    void ShowConfigurePizzaDialog(PizzaSpecial special)
+   
+    void OnOrderStateChanged(object sender, EventArgs e) => StateHasChanged();
+    
+     void IDisposable.Dispose()
     {
-        configuringPizza = new Pizza
-        {
-            Special = special,
-            SpecialId = special.Id,
-            Size = Pizza.DefaultSize,
-            Toppings = new List<PizzaTopping>()
-        };
-        showconfigurationDialog = true;
-    }
-
-    void CancelConfigurePizzaDialog()
-    {
-        Console.WriteLine("Cancelled");
-        configuringPizza = null;
-        showconfigurationDialog = false;
-        StateHasChanged();
-    }
-    void OrderConfiguredPizza()
-    {
-        Console.WriteLine("ordering");
-        if (configuringPizza != null)
-        {
-            pizzaOrder.Pizzas.Add(configuringPizza);
-            configuringPizza = null;
-        }
-
-        showconfigurationDialog = false;
-        StateHasChanged();
-    }
-    void RemovePizzaFromOrder(Pizza configuredPizza)
-    {
-
-        if (pizzaOrder != null && configuredPizza != null)
-        {
-            Console.WriteLine("Removing");
-            pizzaOrder.Pizzas.Remove(configuredPizza);
-        }
-        StateHasChanged();
+        currentState.StateChanged -= OnOrderStateChanged;
     }
 
     async Task PlaceOrder()
     {
-        await HttpClient.PostJsonAsync("/orders", pizzaOrder);
-        pizzaOrder = new Order();
+        await HttpClient.PostJsonAsync("/orders", currentState.PizzaOrder);
+        currentState.ResetOrder();
         UriHelper.NavigateTo("myorders");
     }
 }
