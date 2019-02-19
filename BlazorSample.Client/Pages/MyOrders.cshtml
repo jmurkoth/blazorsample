@@ -1,40 +1,31 @@
 ﻿@page "/myorders"
 @inject HttpClient HttpClient
     <div class="main">
-        @if (_orders == null)
-        {
-            <text>Loading...</text>
-        }
-        else if (_orders.Count == 0)
-        {
-            <h2>No orders placed</h2>
-            <a class="btn btn-success" href="">Order some pizza</a>
-        }
-        else
-        {
-        <div class="list-group orders-list">
-            @foreach (var item in _orders)
-            {
-                <div class="list-group-item">
-                    <div class="col">
-                        <h5>@item.Order.CreatedTime.ToLongDateString()</h5>
-                        Items:
-                        <strong>@item.Order.Pizzas.Count()</strong>;
-                        Total price:
-                        <strong>$@item.Order.GetFormattedTotalPrice()</strong>
-                    </div>
-                    <div class="col">
-                        Status: <strong>@item.StatusText</strong>
-                    </div>
-                    <div class="col flex-grow-0">
-                        <a href="myorders/@item.Order.OrderId" class="btn btn-success">
-                            Track >
-                        </a>
-                    </div>
+        <TemplatedList TItem="OrderWithStatus" Loader="@LoadOrders" ListGroupClass="orders-list">
+            <LoadingContent></LoadingContent>
+            <EmptyContent>
+                <h2>No orders placed</h2>
+                <a class="btn btn-success" href="">Order some pizza</a>
+            </EmptyContent>
+            <ItemContent Context="currentPizza" >
+                <div class="col">
+                    <h5>@currentPizza.Order.CreatedTime.ToLongDateString()</h5>
+                    Items:
+                    <strong>@currentPizza.Order.Pizzas.Count()</strong>;
+                    Total price:
+                    <strong>$@currentPizza.Order.GetFormattedTotalPrice()</strong>
                 </div>
-            }
-        </div>
-        }
+                <div class="col">
+                    Status: <strong>@currentPizza.StatusText</strong>
+                </div>
+                <div class="col flex-grow-0">
+                    <a href="myorders/@currentPizza.Order.OrderId" class="btn btn-success">
+                        Track >
+                    </a>
+                </div>
+            </ItemContent>
+        </TemplatedList>
+ 
     </div>
 
 @functions{
@@ -42,6 +33,11 @@
 
     protected async override Task OnInitAsync()
     {
-        _orders = await HttpClient.GetJsonAsync<List<OrderWithStatus>>("/orders");
+        _orders = await LoadOrders();
+    }
+
+    Task<List<OrderWithStatus>> LoadOrders()
+    {
+        return  HttpClient.GetJsonAsync<List<OrderWithStatus>>("/orders");
     }
 }
