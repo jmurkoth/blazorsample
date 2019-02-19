@@ -1,4 +1,5 @@
-﻿using System;
+﻿using BlazorSample.Components;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -70,7 +71,9 @@ namespace BlazorSample.Shared
         }
 
         static Marker ToMapMarker(string description, LatLong coords, bool showPopup = false)
-            => new Marker { Description = description, X = coords.Longitude, Y = coords.Latitude, ShowPopup = showPopup };
+        {
+            return new Marker { Description = description, X = coords.Longitude, Y = coords.Latitude, ShowPopup = showPopup };
+        }
     }
 }
 
