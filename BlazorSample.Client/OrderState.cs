@@ -61,23 +61,7 @@ namespace BlazorSample.Client
             StateHasChanged();
         }
 
-        public void AddTopping(Topping topping)
-        {
-            if (this.ConfiguringPizza != null && this.ConfiguringPizza.Toppings != null && this.ConfiguringPizza.Toppings.Find(pt => pt.Topping == topping) == null)
-            {
-                this.ConfiguringPizza.Toppings.Add(new PizzaTopping { Topping = topping });
-
-            }
-        }
-       public void RemoveTopping(Topping topping)
-        {
-            if (this.ConfiguringPizza != null && this.ConfiguringPizza.Toppings != null)
-            {
-                this.ConfiguringPizza.Toppings.RemoveAll(pt => pt.Topping == topping);
-
-            }
-        }
-
+       
         private void StateHasChanged()
         {
             StateChanged?.Invoke(this, EventArgs.Empty);

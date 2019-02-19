@@ -24,7 +24,7 @@
     }
     @if (currentState.ShowconfigurationDialog)
     {
-        <ConfigurePizzaDialog OnCancel="@currentState.CancelConfigurePizzaDialog" OnConfirm="@currentState.OrderConfiguredPizza"></ConfigurePizzaDialog>
+        <ConfigurePizzaDialog  Pizza="@currentState.ConfiguringPizza" OnCancel="@currentState.CancelConfigurePizzaDialog" OnConfirm="@currentState.OrderConfiguredPizza"></ConfigurePizzaDialog>
     }
 
 </div>
