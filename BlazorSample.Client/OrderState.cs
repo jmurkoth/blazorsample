@@ -35,7 +35,7 @@ namespace BlazorSample.Client
         public void RemovePizzaFromOrder(Pizza configuredPizza)
         {
 
-            if (this.PizzaOrder != null && this.ConfiguringPizza != null)
+            if (this.PizzaOrder != null && configuredPizza != null)
             {
 
                 this.PizzaOrder.Pizzas.Remove(configuredPizza);

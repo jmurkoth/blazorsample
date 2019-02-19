@@ -3,7 +3,7 @@
 @inject Microsoft.AspNetCore.Components.Services.IUriHelper UriHelper
 @inject OrderState currentState
 @implements IDisposable
-
+@inject IJSRuntime JS
 <div class="main">
 
     @if (specials != null)
@@ -36,7 +36,7 @@
 
             @foreach (var configuredPizza in currentState.PizzaOrder.Pizzas)
             {
-                <ConfiguredPizzaItem Pizza="configuredPizza" OnRemove="(()=>currentState.RemovePizzaFromOrder(configuredPizza))" />
+                <ConfiguredPizzaItem Pizza="configuredPizza" OnRemove="(()=> RemovePizza(configuredPizza))" />
             }
         </div>
     }
@@ -55,7 +55,7 @@
 @functions{
 
     List<PizzaSpecial> specials;
-  
+
 
     protected async override Task OnInitAsync()
     {
@@ -63,14 +63,22 @@
         specials = await HttpClient.GetJsonAsync<List<PizzaSpecial>>("/specials");
     }
 
-   
+
     void OnOrderStateChanged(object sender, EventArgs e) => StateHasChanged();
-    
-     void IDisposable.Dispose()
+
+    void IDisposable.Dispose()
     {
         currentState.StateChanged -= OnOrderStateChanged;
     }
 
+    async Task RemovePizza(Pizza configuredPizza)
+    {
+        if(await JS.Confirm($"Remove {configuredPizza.Special.Name} pizza from the order?"))
+        {
+            Console.WriteLine("Removing pizza");
+            currentState.RemovePizzaFromOrder(configuredPizza);
+        }
+    }
     async Task PlaceOrder()
     {
         await HttpClient.PostJsonAsync("/orders", currentState.PizzaOrder);
