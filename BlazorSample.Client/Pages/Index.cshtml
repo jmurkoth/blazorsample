@@ -22,10 +22,11 @@
             }
         </ul>
     }
-    @if (currentState.ShowconfigurationDialog)
-    {
-        <ConfigurePizzaDialog  Pizza="@currentState.ConfiguringPizza" OnCancel="@currentState.CancelConfigurePizzaDialog" OnConfirm="@currentState.OrderConfiguredPizza"></ConfigurePizzaDialog>
-    }
+
+<TemplatedDialog Show="currentState.ShowconfigurationDialog">
+    <ConfigurePizzaDialog Pizza="@currentState.ConfiguringPizza" OnCancel="@currentState.CancelConfigurePizzaDialog" OnConfirm="@currentState.OrderConfiguredPizza"></ConfigurePizzaDialog>
+</TemplatedDialog>
+
 
 </div>
 <div class="sidebar">
